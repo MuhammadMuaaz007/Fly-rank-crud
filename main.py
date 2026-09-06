@@ -2,7 +2,11 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
-app = FastAPI()
+app = FastAPI(
+    title="Task API",
+    description="A simple in-memory CRUD API for managing to-do tasks.",
+    version="1.0",
+)
 
 # In-memory "database" — 3 starter tasks
 tasks = [
@@ -31,8 +35,11 @@ def find_task(task_id: int):
     raise HTTPException(status_code=404, detail={"error": f"Task {task_id} not found"})
 
 
-@app.get("/")
+# --- Meta endpoints ---
+
+@app.get("/", tags=["Meta"], summary="API info")
 def root():
+    """Returns the API name, version, and available endpoints."""
     return {
         "name": "Task API",
         "version": "1.0",
@@ -40,23 +47,33 @@ def root():
     }
 
 
-@app.get("/health")
+@app.get("/health", tags=["Meta"], summary="Health check")
 def health():
+    """Returns ok when the server is alive. Used by monitoring tools."""
     return {"status": "ok"}
 
 
-@app.get("/tasks")
+# --- Task endpoints ---
+
+@app.get("/tasks", tags=["Tasks"], summary="List all tasks")
 def list_tasks():
+    """Return every task in the in-memory list."""
     return tasks
 
 
-@app.get("/tasks/{task_id}")
+@app.get("/tasks/{task_id}", tags=["Tasks"], summary="Get one task")
 def get_task(task_id: int):
+    """Return a single task by id. Returns 404 if not found."""
     return find_task(task_id)
 
 
-@app.post("/tasks", status_code=201)
+@app.post("/tasks", status_code=201, tags=["Tasks"], summary="Create a task")
 def create_task(body: TaskCreate):
+    """
+    Create a new task.
+    - **title** is required and must not be blank → 400 if empty, 422 if missing.
+    - Returns the created task with status **201**.
+    """
     global next_id
 
     if not body.title.strip():
@@ -68,13 +85,16 @@ def create_task(body: TaskCreate):
     return new_task
 
 
-@app.put("/tasks/{task_id}")
+@app.put("/tasks/{task_id}", tags=["Tasks"], summary="Update a task")
 def update_task(task_id: int, body: TaskUpdate):
-    # Must send at least one field
+    """
+    Update a task's **title** and/or **done** status.
+    - Send at least one field → 400 if body is empty.
+    - Returns 404 if the task doesn't exist.
+    """
     if body.title is None and body.done is None:
         raise HTTPException(status_code=400, detail={"error": "send at least one of: title, done"})
 
-    # title cannot be blank if provided
     if body.title is not None and not body.title.strip():
         raise HTTPException(status_code=400, detail={"error": "title must not be empty"})
 
@@ -88,7 +108,12 @@ def update_task(task_id: int, body: TaskUpdate):
     return task
 
 
-@app.delete("/tasks/{task_id}", status_code=204)
+@app.delete("/tasks/{task_id}", status_code=204, tags=["Tasks"], summary="Delete a task")
 def delete_task(task_id: int):
+    """
+    Delete a task by id.
+    - Returns **204 No Content** on success.
+    - Returns 404 if the task doesn't exist.
+    """
     task = find_task(task_id)
     tasks.remove(task)
