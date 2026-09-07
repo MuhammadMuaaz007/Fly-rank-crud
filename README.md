@@ -122,7 +122,8 @@ Every endpoint is listed with its description and a **Try it out** button.
 
 *(Take a screenshot of `/docs` and save it as `swagger-screenshot.png` in this folder.)*
 
----
+<img width="1787" height="944" alt="image" src="https://github.com/user-attachments/assets/8988ee1b-bf07-4e75-bfc1-ffba72a476e8" />
+
 
 ## Git history
 
